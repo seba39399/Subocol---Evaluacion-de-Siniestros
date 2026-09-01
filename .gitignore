@@ -1,0 +1,45 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ccache
+.cache/
+
+# Virtual environments & uv
+.venv/
+venv/
+ENV/
+env/
+.uv/
+
+# Environment variables & secrets (¡CRÍTICO para la API key de Groq!)
+.env
+.env.*
+!.env.example
+
+# Bytecode & IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Model artifacts (Si pesan más de 100MB o los manejas con Git LFS / DVC)
+# Descomenta las siguientes líneas si no quieres subir los .pkl al repo:
+# models/*.pkl
+# *.pkl
+# *.joblib
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Streamlit local state
+.streamlit/secrets.toml
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Docker logs
+*.log
