@@ -4,7 +4,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: src/Dockerfile
     container_name: subocol-backend
     ports:
       - "8000:8000"
@@ -20,7 +20,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile.frontend
+      dockerfile: frontend/Dockerfile
     container_name: subocol-frontend
     ports:
       - "8501:8501"

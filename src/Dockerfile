@@ -24,7 +24,8 @@ COPY pyproject.toml uv.lock ./
 # Instala dependencias del proyecto
 RUN uv pip install --system --no-cache -r pyproject.toml
 
-# Copia todo el código fuente (incluyendo el modelo .joblib que está dentro de src/)
+# Copia la carpeta de modelos y todo el código fuente de la aplicación
+COPY models/ /app/models/
 COPY src/ /app/src/
 
 # Seguridad: Crear y usar usuario sin privilegios
