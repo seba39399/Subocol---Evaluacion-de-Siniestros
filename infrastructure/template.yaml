@@ -8,7 +8,7 @@ Parameters:
     Description: Nombre del entorno
 
 Resources:
-  # Bucket de S3 para almacenar los archivos PDF de forma segura
+  # 1. Bucket de S3 para almacenar los archivos PDF de forma segura
   PdfStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -21,14 +21,14 @@ Resources:
       VersioningConfiguration:
         Status: Enabled
 
-  # Grupo de Logs en CloudWatch para monitorear los contenedores
+  # 2. Grupo de Logs en CloudWatch para monitorear los contenedores
   ECSLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/ecs/subocol-${EnvironmentName}"
       RetentionInDays: 30
 
-  # Rol de IAM para ECS (Para que los contenedores usen S3 y CloudWatch)
+  # 3. Rol de IAM para ECS y su política de S3 separada
   EcsTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -41,21 +41,26 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-      Policies:
-        - PolicyName: SubocolS3AndLogsAccess
-          PolicyDocument:
-            Version: "2010-09-09"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:PutObject
-                  - s3:GetObject
-                  - s3:ListBucket
-                Resource:
-                  - !GetAtt PdfStorageBucket.Arn
-                  - !Sub "${PdfStorageBucket.Arn}/*"
 
-  # Red básica (VPC, Subredes y Security Groups)
+  EcsTaskExecutionPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: SubocolS3AndLogsAccess
+      Roles:
+        - !Ref EcsTaskExecutionRole
+      PolicyDocument:
+        Version: "2010-09-09"
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:ListBucket
+            Resource:
+              - !GetAtt PdfStorageBucket.Arn
+              - !Sub "${PdfStorageBucket.Arn}/*"
+
+  # 4. Red básica (VPC, Subredes y Security Groups)
   SubocolVPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -123,7 +128,7 @@ Resources:
           ToPort: 8501
           CidrIp: 0.0.0.0/0
 
-  # ECS Cluster
+  # 5. ECS Cluster
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
