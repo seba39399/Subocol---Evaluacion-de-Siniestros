@@ -8,7 +8,7 @@ Parameters:
     Description: Nombre del entorno
 
 Resources:
-  # 1. Bucket de S3 para almacenar los archivos PDF de forma segura
+  # Bucket de S3 para almacenar los archivos PDF de forma segura
   PdfStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -21,14 +21,14 @@ Resources:
       VersioningConfiguration:
         Status: Enabled
 
-  # 2. Grupo de Logs en CloudWatch para monitorear los contenedores
+  # Grupo de Logs en CloudWatch para monitorear los contenedores
   ECSLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/ecs/subocol-${EnvironmentName}"
       RetentionInDays: 30
 
-  # 3. Rol de IAM para ECS (Para que los contenedores usen S3 y CloudWatch)
+  # Rol de IAM para ECS (Para que los contenedores usen S3 y CloudWatch)
   EcsTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -55,7 +55,7 @@ Resources:
                   - !GetAtt PdfStorageBucket.Arn
                   - !Sub "${PdfStorageBucket.Arn}/*"
 
-  # 4. Red básica (VPC, Subredes y Security Groups)
+  # Red básica (VPC, Subredes y Security Groups)
   SubocolVPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -118,12 +118,12 @@ Resources:
           FromPort: 8000
           ToPort: 8000
           CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp # <--- Corregido de "infraestructura" a "tcp"
+        - IpProtocol: tcp
           FromPort: 8501
           ToPort: 8501
           CidrIp: 0.0.0.0/0
 
-  # 5. ECS Cluster
+  # ECS Cluster
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
