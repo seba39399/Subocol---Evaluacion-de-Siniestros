@@ -1,10 +1,6 @@
-version: "3.8"
-
 services:
   backend:
-    build:
-      context: .
-      dockerfile: src/Dockerfile
+    image: seba39399/subocol-backend:latest
     container_name: subocol-backend
     ports:
       - "8000:8000"
@@ -18,14 +14,12 @@ services:
       retries: 3
 
   frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
+    image: seba39399/subocol-frontend:latest
     container_name: subocol-frontend
     ports:
       - "8501:8501"
     environment:
-      - API_URL=http://backend:8000
+      - API_URL=http://localhost:8001
     depends_on:
       backend:
         condition: service_healthy

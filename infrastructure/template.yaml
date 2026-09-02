@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Infraestructura limpia para Subocol (Backend, Frontend, S3 y CloudWatch) con ECS Fargate
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: production
+    Description: Nombre del entorno
+
+Resources:
+  # 1. Bucket de S3 para almacenar los archivos PDF de forma segura
+  PdfStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "subocol-pdf-storage-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+
+  # 2. Grupo de Logs en CloudWatch para monitorear los contenedores
+  ECSLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/subocol-${EnvironmentName}"
+      RetentionInDays: 30
+
+  # 3. Rol de IAM para ECS (Para que los contenedores usen S3 y CloudWatch)
+  EcsTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2010-09-09"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: SubocolS3AndLogsAccess
+          PolicyDocument:
+            Version: "2010-09-09"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt PdfStorageBucket.Arn
+                  - !Sub "${PdfStorageBucket.Arn}/*"
+
+  # 4. Red básica (VPC, Subredes y Security Groups)
+  SubocolVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub "subocol-vpc-${EnvironmentName}"
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref SubocolVPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: subocol-public-subnet-1
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: subocol-igw
+
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref SubocolVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref SubocolVPC
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  ContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Acceso HTTP para los contenedores ECS
+      VpcId: !Ref SubocolVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp # <--- Corregido de "infraestructura" a "tcp"
+          FromPort: 8501
+          ToPort: 8501
+          CidrIp: 0.0.0.0/0
+
+  # 5. ECS Cluster
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "subocol-cluster-${EnvironmentName}"
+
+Outputs:
+  S3BucketName:
+    Description: Nombre del bucket de S3 creado para los PDFs
+    Value: !Ref PdfStorageBucket
+  CloudWatchLogGroup:
+    Description: Grupo de logs centralizado en CloudWatch
+    Value: !Ref ECSLogGroup
