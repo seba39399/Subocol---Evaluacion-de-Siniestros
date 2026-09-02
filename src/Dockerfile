@@ -3,7 +3,7 @@ FROM python:3.12-slim
 
 # Variables de entorno para evitar buffering de logs y optimizar Python
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONTONTWRITEBYTECODE=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
     PORT=8000
 
 WORKDIR /app
@@ -18,14 +18,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir uv
 
-# Copia manifiestos de dependencias
+# Copia manifiestos de dependencias desde la raíz
 COPY pyproject.toml uv.lock ./
 
-# Instala dependencias de producción en el entorno global de Python
+# Instala dependencias del proyecto
 RUN uv pip install --system --no-cache -r pyproject.toml
 
-# Copia los artefactos, modelos, código de aplicación y configuraciones
-COPY models/ /app/models/
+# Copia todo el código fuente (incluyendo el modelo .joblib que está dentro de src/)
 COPY src/ /app/src/
 
 # Seguridad: Crear y usar usuario sin privilegios
