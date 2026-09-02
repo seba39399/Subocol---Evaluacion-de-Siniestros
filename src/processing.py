@@ -86,7 +86,16 @@ def detectar_inconsistencia_posicion(hechos_clean: str, piezas_clean: str) -> in
     )
     atras_en_piezas = any(
         w in piezas_clean
-        for w in ["trasero", "trasera", "atras", "atrás", "baul", "baúl", "stop", "compuerta"]
+        for w in [
+            "trasero",
+            "trasera",
+            "atras",
+            "atrás",
+            "baul",
+            "baúl",
+            "stop",
+            "compuerta",
+        ]
     )
 
     atras_en_hechos = any(
