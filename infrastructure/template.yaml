@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Infraestructura limpia para Subocol (Backend, Frontend, S3 y CloudWatch) con ECS Fargate
+Description: Infraestructura limpia para Subocol sin creacion de roles IAM
 
 Parameters:
   EnvironmentName:
@@ -28,21 +28,7 @@ Resources:
       LogGroupName: !Sub "/ecs/subocol-${EnvironmentName}"
       RetentionInDays: 30
 
-  # 3. Rol de IAM básico para ECS (Solo la política administrada de AWS)
-  EcsTaskExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2010-09-09"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ecs-tasks.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-
-  # 4. Red básica (VPC, Subredes y Security Groups)
+  # 3. Red básica (VPC, Subredes y Security Groups)
   SubocolVPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -110,7 +96,7 @@ Resources:
           ToPort: 8501
           CidrIp: 0.0.0.0/0
 
-  # 5. ECS Cluster
+  # 4. ECS Cluster
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
