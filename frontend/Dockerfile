@@ -22,9 +22,9 @@ COPY pyproject.toml uv.lock ./
 # Instala las dependencias del proyecto omitiendo las de desarrollo (--no-dev)
 RUN uv pip install --system --no-cache -r pyproject.toml
 
-# Copia el código de la aplicación
+# Copia el código de la aplicación (incluyendo src y la carpeta frontend)
 COPY src/ /app/src/
-COPY ui/ /app/ui/
+COPY frontend/ /app/frontend/
 
 # Crea un usuario sin privilegios por seguridad
 RUN useradd -m appuser && chown -R appuser:appuser /app
@@ -37,5 +37,5 @@ EXPOSE 8501
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl --fail http://localhost:8501/_stcore/health || exit 1
 
-# Comando por defecto para iniciar Streamlit
-CMD ["streamlit", "run", "ui/app.py"]
+# Comando por defecto para iniciar Streamlit apuntando a frontend/app.py
+CMD ["streamlit", "run", "frontend/app.py"]
