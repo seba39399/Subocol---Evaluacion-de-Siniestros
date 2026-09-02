@@ -116,7 +116,7 @@ resource "aws_iam_role_policy" "s3_access" {
   role = aws_iam_role.ecs_execution_role.id
 
   policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17" 
     Statement = [{
       Effect = "Allow"
       Action = [
@@ -133,7 +133,7 @@ resource "aws_iam_role_policy" "s3_access" {
   })
 }
 
-# --- ECS CLUSTER ---
+# --- ECS CLUSTERR ---
 resource "aws_ecs_cluster" "main" {
   name = "subocol-cluster-${var.environment}"
 }
