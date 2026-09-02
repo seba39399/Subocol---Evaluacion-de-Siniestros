@@ -1,14 +1,18 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Infraestructura limpia para Subocol sin creacion de roles IAM
+Description: Infraestructura completa de Subocol con ECS Fargate, Servicios, Red y Permisos de S3
 
 Parameters:
   EnvironmentName:
     Type: String
     Default: production
     Description: Nombre del entorno
+  DockerUser:
+    Type: String
+    Default: seba39399
+    Description: Usuario de Docker Hub
 
 Resources:
-  # 1. Bucket de S3 para almacenar los archivos PDF de forma segura
+  # 1. Bucket de S3 para archivos PDF
   PdfStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -21,14 +25,43 @@ Resources:
       VersioningConfiguration:
         Status: Enabled
 
-  # 2. Grupo de Logs en CloudWatch para monitorear los contenedores
+  # 2. Grupo de Logs en CloudWatch
   ECSLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/ecs/subocol-${EnvironmentName}"
       RetentionInDays: 30
 
-  # 3. Red básica (VPC, Subredes y Security Groups)
+  # 3. Rol IAM con permisos de ECS y acceso directo al S3 de PDFs
+  EcsTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "subocol-ecs-execution-role-${EnvironmentName}"
+      AssumeRolePolicyDocument:
+        Version: "2010-09-09"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: S3PdfAccessPolicy
+          PolicyDocument:
+            Version: "2010-09-09"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt PdfStorageBucket.Arn
+                  - !Sub "${PdfStorageBucket.Arn}/*"
+
+  # 4. Red básica (VPC, Subred, IGW y Rutas)
   SubocolVPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -96,11 +129,69 @@ Resources:
           ToPort: 8501
           CidrIp: 0.0.0.0/0
 
-  # 4. ECS Cluster
+  # 5. ECS Cluster
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: !Sub "subocol-cluster-${EnvironmentName}"
+
+  # 6. Task Definition con inyección del Bucket y el Rol personalizado
+  ECSTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub "subocol-task-${EnvironmentName}"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: "512"
+      Memory: "1024"
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: backend
+          Image: !Sub "${DockerUser}/subocol-backend:latest"
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8000
+              HostPort: 8000
+          Environment:
+            - Name: S3_BUCKET_NAME
+              Value: !Ref PdfStorageBucket
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ECSLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: backend
+        - Name: frontend
+          Image: !Sub "${DockerUser}/subocol-frontend:latest"
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8501
+              HostPort: 8501
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ECSLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: frontend
+
+  # 7. ECS Service
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref ECSCluster
+      ServiceName: !Sub "subocol-service-${EnvironmentName}"
+      TaskDefinition: !Ref ECSTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref PublicSubnet1
+          SecurityGroups:
+            - !Ref ContainerSecurityGroup
 
 Outputs:
   S3BucketName:
@@ -109,3 +200,6 @@ Outputs:
   CloudWatchLogGroup:
     Description: Grupo de logs centralizado en CloudWatch
     Value: !Ref ECSLogGroup
+  ClusterName:
+    Description: Nombre del cluster ECS
+    Value: !Ref ECSCluster
