@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Infraestructura completa de Subocol con ECS Fargate, Servicios, Red y Permisos de S3
+Description: Infraestructura completa de Subocol con ECS Fargate, Servicios y Red (Uso de rol IAM por defecto)
 
 Parameters:
   EnvironmentName:
@@ -32,36 +32,7 @@ Resources:
       LogGroupName: !Sub "/ecs/subocol-${EnvironmentName}"
       RetentionInDays: 30
 
-  # 3. Rol IAM con permisos de ECS y acceso directo al S3 de PDFs
-  EcsTaskExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Sub "subocol-ecs-execution-role-${EnvironmentName}"
-      AssumeRolePolicyDocument:
-        Version: "2010-09-09"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ecs-tasks.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-      Policies:
-        - PolicyName: S3PdfAccessPolicy
-          PolicyDocument:
-            Version: "2010-09-09"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                  - s3:PutObject
-                  - s3:DeleteObject
-                  - s3:ListBucket
-                Resource:
-                  - !GetAtt PdfStorageBucket.Arn
-                  - !Sub "${PdfStorageBucket.Arn}/*"
-
-  # 4. Red básica (VPC, Subred, IGW y Rutas)
+  # 3. Red básica (VPC, Subred, IGW y Rutas)
   SubocolVPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -129,13 +100,13 @@ Resources:
           ToPort: 8501
           CidrIp: 0.0.0.0/0
 
-  # 5. ECS Cluster
+  # 4. ECS Cluster
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: !Sub "subocol-cluster-${EnvironmentName}"
 
-  # 6. Task Definition con inyección del Bucket y el Rol personalizado
+  # 5. Task Definition usando el rol estándar de ejecución de AWS (Sin declararlo manualmente)
   ECSTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -145,8 +116,7 @@ Resources:
         - FARGATE
       Cpu: "512"
       Memory: "1024"
-      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
-      TaskRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      ExecutionRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
       ContainerDefinitions:
         - Name: backend
           Image: !Sub "${DockerUser}/subocol-backend:latest"
@@ -176,7 +146,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: frontend
 
-  # 7. ECS Service
+  # 6. ECS Service
   ECSService:
     Type: AWS::ECS::Service
     Properties:
