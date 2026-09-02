@@ -54,7 +54,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
+          file: ./src/Dockerfile # <-- Actualizado a la carpeta src/
           push: false
           tags: subocol-backend:ci
           cache-from: type=gha,scope=backend
@@ -64,7 +64,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile.frontend
+          file: ./frontend/Dockerfile # <-- Actualizado a la carpeta frontend/ (ajusta si se llama Dockerfile.frontend)
           push: false
           tags: subocol-frontend:ci
           cache-from: type=gha,scope=frontend
