@@ -43,3 +43,11 @@ Thumbs.db
 
 # Docker logs
 *.log
+
+# Terraform local state and directories
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+.terraform.lock.hcl
