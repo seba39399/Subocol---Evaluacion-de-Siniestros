@@ -13,7 +13,7 @@ ENV/
 env/
 .uv/
 
-# Environment variables & secrets (¡CRÍTICO para la API key de Groq!)
+# Environment variables & secrets
 .env
 .env.*
 !.env.example

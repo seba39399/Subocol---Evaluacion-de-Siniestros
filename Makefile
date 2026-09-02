@@ -6,8 +6,12 @@ run-backend:
 run-frontend:
 	uv run streamlit run frontend/app.py
 
+run-pytest:
+	uv run pytest -v
+
 docker-up:
 	docker-compose up --build
 
 docker-down:
 	docker-compose down
+
