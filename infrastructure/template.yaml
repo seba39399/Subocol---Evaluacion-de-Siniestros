@@ -28,7 +28,7 @@ Resources:
       LogGroupName: !Sub "/ecs/subocol-${EnvironmentName}"
       RetentionInDays: 30
 
-  # 3. Rol de IAM para ECS y su política de S3 separada
+  # 3. Rol de IAM básico para ECS (Solo la política administrada de AWS)
   EcsTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -41,24 +41,6 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-
-  EcsTaskExecutionPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: SubocolS3AndLogsAccess
-      Roles:
-        - !Ref EcsTaskExecutionRole
-      PolicyDocument:
-        Version: "2010-09-09"
-        Statement:
-          - Effect: Allow
-            Action:
-              - s3:PutObject
-              - s3:GetObject
-              - s3:ListBucket
-            Resource:
-              - !GetAtt PdfStorageBucket.Arn
-              - !Sub "${PdfStorageBucket.Arn}/*"
 
   # 4. Red básica (VPC, Subredes y Security Groups)
   SubocolVPC:
