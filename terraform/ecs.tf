@@ -18,7 +18,8 @@ resource "aws_ecs_task_definition" "app" {
         hostPort      = 8000
       }]
       environment = [
-        { name = "S3_BUCKET_NAME", value = aws_s3_bucket.pdf_storage.id }
+        { name = "S3_BUCKET_NAME", value = aws_s3_bucket.pdf_storage.id },
+        { name = "AWS_REGION", value = "us-east-1" }
       ],
       # INYECCIÓN AUTOMÁTICA DESDE SECRETS MANAGER
       secrets = [
@@ -26,7 +27,7 @@ resource "aws_ecs_task_definition" "app" {
           name      = "GROQ_API_KEY"
           valueFrom = data.aws_secretsmanager_secret.groq_key.arn
         }
-      ]
+      ],
       logConfiguration = {
         logDriver = "awslogs"
         options = {
