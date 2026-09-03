@@ -20,11 +20,11 @@ resource "aws_ecs_task_definition" "app" {
       environment = [
         { name = "S3_BUCKET_NAME", value = aws_s3_bucket.pdf_storage.id }
       ],
-      # INYECCIÓN PROFESIONAL DESDE SECRETS MANAGER
+      # INYECCIÓN AUTOMÁTICA DESDE SECRETS MANAGER
       secrets = [
         {
           name      = "GROQ_API_KEY"
-          valueFrom = var.groq_secret_arn
+          valueFrom = data.aws_secretsmanager_secret.groq_key.arn
         }
       ]
       logConfiguration = {
@@ -71,7 +71,7 @@ resource "aws_ecs_service" "app_service" {
   }
 }
 
-# --- OUTPUTS (Para ver la IP y el S3 al terminar) ---
+# --- OUTPUTS ---
 output "s3_bucket_name" {
   value = aws_s3_bucket.pdf_storage.id
 }
