@@ -139,7 +139,7 @@ resource "aws_iam_role_policy" "s3_access" {
   })
 }
 
-# --- ECS CLUSTER ---
+# --- ECS CLUSTERR ---
 resource "aws_ecs_cluster" "main" {
   name = "subocol-cluster-${var.environment}"
 }
