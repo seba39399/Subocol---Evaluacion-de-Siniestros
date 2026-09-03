@@ -1,6 +1,9 @@
+import os
 from pathlib import Path
 
+import boto3
 import joblib
+from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel, Field
 
@@ -236,6 +239,24 @@ def generate_pdf_report(report_data: PDFReportRequest):
     try:
         # Invoca la función encargada de armar el buffer binario del PDF
         pdf_bytes = generar_pdf_dictamen(report_data.model_dump())
+
+        # Intentamos subir el PDF generado a un bucket de S3
+        s3_bucket = os.getenv("S3_BUCKET_NAME", "subocol-pdf-storage-615296308634")
+        file_name = f"dictamen_siniestro_{os.urandom(4).hex()}.pdf"
+
+        if s3_bucket:
+            try:
+                s3_client = boto3.client("s3")
+                # Subimos los bytes directamente al bucket
+                s3_client.put_object(
+                    Bucket=s3_bucket,
+                    Key=file_name,
+                    Body=pdf_bytes,
+                    ContentType="application/pdf"
+                )
+            except (BotoCoreError, ClientError) as s3_err:
+                # Opcional: Logueas el error de S3 pero dejas que el usuario descargue el PDF localmente
+                print(f"Advertencia: No se pudo subir el PDF a S3: {s3_err}")
 
         headers = {
             "Content-Disposition": "attachment; filename=dictamen_siniestro_subocol.pdf"

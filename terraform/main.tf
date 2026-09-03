@@ -159,3 +159,71 @@ resource "aws_iam_role_policy" "secrets_access" {
 resource "aws_ecs_cluster" "main" {
   name = "subocol-cluster-${var.environment}"
 }
+
+# --- ECS TASK DEFINITION (CON S3_BUCKET_NAME Y AWS_REGION PARA BOTO3) ---
+resource "aws_ecs_task_definition" "app" {
+  family                   = "subocol-task-${var.environment}"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_execution_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "subocol-container"
+      image     = "${var.docker_user}/subocol-backend:latest"
+      essential = true
+      portMappings = [
+        {
+          containerPort = 8000
+          hostPort      = 8000
+        },
+        {
+          containerPort = 8501
+          hostPort      = 8501
+        }
+      ],
+      environment = [
+        {
+          name  = "S3_BUCKET_NAME"
+          value = aws_s3_bucket.pdf_storage.id
+        },
+        {
+          name  = "AWS_REGION"
+          value = "us-east-1"
+        }
+      ],
+      secrets = [
+        {
+          name      = "GROQ_API_KEY"
+          valueFrom = data.aws_secretsmanager_secret.groq_key.arn
+        }
+      ],
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs_logs.name
+          "awslogs-region"        = "us-east-1"
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
+}
+
+# --- ECS SERVICE ---
+resource "aws_ecs_service" "service" {
+  name            = "subocol-service-${var.environment}"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.app.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = [aws_subnet.public_1.id]
+    security_groups  = [aws_security_group.container_sg.id]
+    assign_public_ip = true
+  }
+}
