@@ -213,7 +213,7 @@ resource "aws_ecs_task_definition" "app" {
   ])
 }
 
-# --- ECS SERVICE ---
+# --- ECS . SERVICE ---
 resource "aws_ecs_service" "service" {
   name            = "subocol-service-${var.environment}"
   cluster         = aws_ecs_cluster.main.id

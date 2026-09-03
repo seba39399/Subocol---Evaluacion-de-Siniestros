@@ -252,7 +252,7 @@ def generate_pdf_report(report_data: PDFReportRequest):
                     Bucket=s3_bucket,
                     Key=file_name,
                     Body=pdf_bytes,
-                    ContentType="application/pdf"
+                    ContentType="application/pdf",
                 )
             except (BotoCoreError, ClientError) as s3_err:
                 # Opcional: Logueas el error de S3 pero dejas que el usuario descargue el PDF localmente
