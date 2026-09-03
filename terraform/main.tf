@@ -159,18 +159,3 @@ resource "aws_iam_role_policy" "secrets_access" {
 resource "aws_ecs_cluster" "main" {
   name = "subocol-cluster-${var.environment}"
 }
-
-# --- ECS . SERVICE ---
-resource "aws_ecs_service" "service" {
-  name            = "subocol-service-${var.environment}"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.app.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets          = [aws_subnet.public_1.id]
-    security_groups  = [aws_security_group.container_sg.id]
-    assign_public_ip = true
-  }
-}
