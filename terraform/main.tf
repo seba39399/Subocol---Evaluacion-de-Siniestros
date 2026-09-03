@@ -6,6 +6,12 @@ variable "docker_user" {
   default = "seba39399"
 }
 
+variable "groq_api_key" {
+  type      = string
+  sensitive = true
+  default   = ""
+}
+
 # --- S3 BUCKET PARA PDFS ---
 resource "aws_s3_bucket" "pdf_storage" {
   bucket = "subocol-pdf-storage-${data.aws_caller_identity.current.account_id}"
@@ -133,7 +139,7 @@ resource "aws_iam_role_policy" "s3_access" {
   })
 }
 
-# --- ECS CLUSTERR ---
+# --- ECS CLUSTER ---
 resource "aws_ecs_cluster" "main" {
   name = "subocol-cluster-${var.environment}"
 }

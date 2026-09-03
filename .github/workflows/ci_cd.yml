@@ -109,4 +109,4 @@ jobs:
 
       - name: Terraform Apply
         working-directory: ./terraform
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -var="groq_api_key=${{ secrets.GROQ_API_KEY }}"
