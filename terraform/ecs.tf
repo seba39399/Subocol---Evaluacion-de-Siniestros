@@ -19,6 +19,13 @@ resource "aws_ecs_task_definition" "app" {
       }]
       environment = [
         { name = "S3_BUCKET_NAME", value = aws_s3_bucket.pdf_storage.id }
+      ],
+      # INYECCIÓN PROFESIONAL DESDE SECRETS MANAGER
+      secrets = [
+        {
+          name      = "GROQ_API_KEY"
+          valueFrom = var.groq_secret_arn
+        }
       ]
       logConfiguration = {
         logDriver = "awslogs"

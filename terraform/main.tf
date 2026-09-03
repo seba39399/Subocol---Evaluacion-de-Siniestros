@@ -6,10 +6,10 @@ variable "docker_user" {
   default = "seba39399"
 }
 
-variable "groq_api_key" {
-  type      = string
-  sensitive = true
-  default   = ""
+# Variable opcional para el ARN del secreto en Secrets Manager
+variable "groq_secret_arn" {
+  type    = string
+  default = "arn:aws:secretsmanager:us-east-1:615296308634:secret:subocol/groq-api-key-XXXXXX"
 }
 
 # --- S3 BUCKET PARA PDFS ---
@@ -139,7 +139,24 @@ resource "aws_iam_role_policy" "s3_access" {
   })
 }
 
-# --- ECS CLUSTERR ---
+# NUEVO: Política para permitir que ECS lea el secreto de Groq desde Secrets Manager
+resource "aws_iam_role_policy" "secrets_access" {
+  name = "subocol-secrets-access"
+  role = aws_iam_role.ecs_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "secretsmanager:GetSecretValue"
+      ]
+      Resource = var.groq_secret_arn
+    }]
+  })
+}
+
+# --- ECS CLUSTER ---
 resource "aws_ecs_cluster" "main" {
   name = "subocol-cluster-${var.environment}"
 }
