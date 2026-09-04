@@ -6,7 +6,7 @@ variable "docker_user" {
   default = "seba39399"
 }
 
-# NUEVO: Buscar automáticamente el ARN del secreto en Secrets Manager por su nombre
+# Buscar automáticamente el ARN del secreto en Secrets Manager por su nombre
 data "aws_secretsmanager_secret" "groq_key" {
   name = "subocol/groq-api-key"
 }

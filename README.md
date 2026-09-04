@@ -1,6 +1,8 @@
 # Sistema de Clasificación e Inferencia de Siniestros Vehiculares — Subocol IA
 
-Solución MLOps de producción para la evaluación automatizada de coherencia entre testimonios de siniestros, métricas de repuestos e inspección física. Utiliza un **sistema híbrido multinivel** que combina Machine Learning tabular/NLP (`HistGradientBoostingClassifier` + TF-IDF), reglas deterministas sintácticas/espaciales y **Auditoría de GenAI** (vía Groq SDK) para la generación de dictámenes y justificaciones técnicas en tiempo real.
+En este repositorio se presenta una solución MLOps de producción para la evaluación automatizada de coherencia entre testimonios de siniestros, métricas de repuestos e inspección física. Utiliza un **sistema híbrido multinivel** que combina Machine Learning tabular/NLP (`HistGradientBoostingClassifier` + TF-IDF), reglas deterministas sintácticas/espaciales y **Auditoría de GenAI** (vía Groq SDK) para la generación de dictámenes y justificaciones técnicas en tiempo real.
+
+Se realiza a su vez un despliegue por medio de un pipeline ci-cd por medio de GitHub actions que permite aplicar fases de pruebas unitarias del software, generación de las imagenes y contenedores de software tanto de la interfaz gráfica de usuario como del servicio de la API y por último de sube a los servidores AWS para ser consumido por ECS, S3 y Fargate.
 
 ---
 
@@ -28,21 +30,38 @@ El pipeline de inferencia procesa cada solicitud a través de 3 capas independie
 
 ---
 
+## Diagrama de Flujo del Sistema
+
+## ![Arquitectura del Sistema Subocol](data\diagrama.png)
+
 ## Estructura del Proyecto
 
 ```text
-agentic-subocol/
+subocol-prueba/
+├── .github/
+│   └── workflows/
+│       └── ci_cd.yml           # Pipeline de CI/CD (Lint, Tests, Docker, Terraform)
+├── frontend/
+│   ├── app.py                  # Dashboard interactivo en Streamlit
+│   └── Dockerfile              # Dockerfile del contenedor frontend
 ├── models/
-│   ├── model.pkl              # Modelo HistGradientBoosting entrenado
-│   ├── tfidf_hechos.pkl       # Vectorizador TF-IDF para hechos
-│   └── tfidf_piezas.pkl       # Vectorizador TF-IDF para piezas
+│   └── modelo_subocol_calibrado.joblib # Modelos y artefactos entrenados
 ├── src/
-│   ├── api.py                 # FastAPI backend, middlewares, CORS y endpoints
-│   ├── processing.py          # Lógica de preprocesamiento, ML y cliente Groq LLM
-│   └── app_ui.py              # Dashboard interactivo en Streamlit
-├── .env                       # Configuración de variables de entorno (GROQ_API_KEY)
-├── pyproject.toml             # Configuración del proyecto y dependencias (uv)
-└── Dockerfile                 # Dockerfile de producción multicapa con uv
+│   ├── api.py                  # FastAPI backend y endpoints principales
+│   ├── processing.py           # Lógica de preprocesamiento, ML y cliente Groq LLM
+│   ├── __init__.py
+│   └── Dockerfile              # Dockerfile del contenedor backend
+├── terraform/
+│   ├── ecs.tf                  # Definición de tareas y servicios ECS Fargate
+│   ├── main.tf                 # Configuración de red, S3, IAM, Secrets Manager y Clúster
+│   └── providers.tf            # Configuración del proveedor de AWS
+├── tests/                      # Suite de pruebas unitarias y de integración
+├── .uv.lock                    # Lock nativo del entorno UV
+├── .gitignore
+├── docker-compose.yml          # Orquestación local multi-contenedor
+├── Makefile                    # Automatización de tareas locales
+└── pyproject.toml              # Gestión de dependencias con uv
+
 ```
 
 ## Replicación de Entorno con `uv`
@@ -148,9 +167,33 @@ El pipeline implementa mecanismos de tolerancia a fallos en la capa de IA Genera
 
 ---
 
+## Arquitectura Cloud & MLOps (AWS + Terraform)
+
+El despliegue está automatizado bajo una filosofía _Cloud-Native_ e infraestructura como código (IaC):
+
+- **Orquestación:** Desplegado en **AWS ECS Fargate** (Serverless containers) dividiendo los contenedores de Frontend y Backend.
+- **Gestión de Secretos:** Inyección segura de la API Key de Groq mediante **AWS Secrets Manager**.
+- **Persistencia de Reportes:** Almacenamiento automatizado de dictámenes en formato PDF en buckets privados de **Amazon S3**.
+- **Monitoreo:** Centralización de trazas y logs de rendimiento operativo a través de **AWS CloudWatch**.
+- **Automatización (IaC):** Gestión completa de la red (VPC, Subnets, Internet Gateways), Security Groups y recursos IAM mediante **Terraform**.
+
+---
+
 ## Escalabilidad a Big Data (PySpark Integration)
 
 Aunque la API sirve inferencia de baja latencia vía FastAPI/Pandas (< 15 ms), la lógica central en `src/processing.py` fue diseñada de forma modular:
 
 - Las funciones de limpieza de cadenas, extracción de n-gramas y chequeo de reglas espaciales pueden ser mapeadas como **PySpark `pandas_udf`**.
 - Esto permite desplegar inferencia masiva (Batch) sobre clusters en AWS EMR o Databricks procesando millones de siniestros diarios almacenados en Data Lakes (Parquet/Delta Lake).
+
+---
+
+```markdown
+---
+
+## Autor
+
+**Juan Sebastián Peña Valderrama**
+
+- **Perfil:** Biomedical Engineer | Data Scientist | MLOps & Cloud Infrastructure Engineer.
+```
