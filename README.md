@@ -188,12 +188,12 @@ Aunque la API sirve inferencia de baja latencia vía FastAPI/Pandas (< 15 ms), l
 
 ---
 
-```markdown
----
-
 ## Autor
 
 **Juan Sebastián Peña Valderrama**
 
 - **Perfil:** Biomedical Engineer | Data Scientist | MLOps & Cloud Infrastructure Engineer.
+
+```markdown
+
 ```
