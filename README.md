@@ -26,13 +26,13 @@ El pipeline de inferencia procesa cada solicitud a través de 3 capas independie
 2. **Capa 2: Inferencia Estadística y ML (HistGradientBoosting + TF-IDF)**
    - Vectoriza el texto (hechos y repuestos) y evalúa métricas cuantitativas (ratio de sustitución de piezas, volumen total). Retorna la probabilidad ($P_{\text{objetado}}$) aplicando el umbral $\tau = 0.20$.
 3. **Capa 3: Auditoría Pericial con IA Generativa (Groq API)**
-   - Utiliza modelos de lenguaje de baja latencia a través de la SDK de Groq para auditar la coherencia física/cinética entre el relato y los daños exigidos, entregando una **Justificación Técnica** en formato JSON estructurado.
+   - Utiliza modelos de lenguaje de baja latencia a través de la SDK de Groq para auditar la coherencia física/cinética entre el relato y los daños exigidos, entregando una **Justificación Técnica** en formato es JSON estructurado.
 
 ---
 
 ## Diagrama de Flujo del Sistema
 
-## ![Arquitectura del Sistema Subocol](data\diagrama.png)
+## ![Arquitectura del Sistema Subocol](data/diagrama.png)
 
 ## Estructura del Proyecto
 
